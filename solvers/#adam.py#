@@ -1,0 +1,59 @@
+import theano
+import theano.tensor as T
+import numpy as np
+from regularizer import Regularizer as R
+from utils import clip_norms
+
+"""
+a gradient-based optimization method (like SGD). This includes an 
+"adaptive moment estimation" (mt,vt) and can be regarded as a generalization of AdaGrad
+"""
+
+def floatX(X):
+    return np.asarray(X, dtype=theano.config.floatX)
+
+def Adam(cost, params, lr=0.0002, b1=0.1, b2=0.001, e=1e-8):
+    updates = []
+    grads = T.grad(cost, params, disconnected_inputs='warn')
+    i = theano.shared(np.asarray(0., dtype=theano.config.floatX))
+    i_t = i + 1.
+    fix1 = 1. - (1. - b1)**i_t
+    fix2 = 1. - (1. - b2)**i_t
+    lr_t = lr * (T.sqrt(fix2) / fix1)
+    for p, g in zip(params, grads):
+        m = theano.shared(p.get_value() * 0.)
+        v = theano.shared(p.get_value() * 0.)
+        m_t = (b1 * g) + ((1. - b1) * m)
+        v_t = (b2 * T.sqr(g)) + ((1. - b2) * v)
+        g_t = m_t / (T.sqrt(v_t) + e)
+        p_t = p - (lr_t * g_t)
+        updates.append((m, m_t))
+        updates.append((v, v_t))
+        updates.append((p, p_t))
+    updates.append((i, i_t))
+    return updates
+
+
+def Adam2(cost, params, lr=0.001, b1=0.9, b2=0.999, e=1e-8, l=1-1e-8,regularizer=R(),clipnorm=0.0):
+    updates = []
+    grads = T.grad(cost, params)
+    grads = clip_norms(grads, clipnorm)  
+    t = theano.shared(floatX(1.))
+    b1_t = b1 * l**(t-1)
+    
+    for p, g in zip(params, grads):
+        g = regularizer.gradient_regularize(p, g)
+        m = theano.shared(p.get_value() * 0.)
+        v = theano.shared(p.get_value() * 0.)
+        
+        m_t = b1_t*m + (1 - b1_t)*g
+        v_t = b2*v + (1 - b2)*g**2
+        m_c = m_t / (1-b1**t)
+        v_c = v_t / (1-b2**t)
+        p_t = p - (lr * m_c) / (T.sqrt(v_c) + e)
+        p_t = regularizer.weight_regularize(p_t)
+        updates.append((m, m_t))
+        updates.append((v, v_t))
+        updates.append((p, p_t) )
+    updates.append((t, t + 1.))
+    return updates

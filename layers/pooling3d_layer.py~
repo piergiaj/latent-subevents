@@ -1,0 +1,76 @@
+import theano
+from theano import tensor as T
+from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
+from theano.tensor.signal import downsample as pool
+import numpy as np
+
+
+import activations as act
+
+srng = RandomStreams()
+np_rng = np.random.RandomState()
+
+def get_random(size):
+    return (np_rng.standard_normal(size) * 1. / size[0]).astype(theano.config.floatX)
+
+
+class PoolingLayer(object):
+
+    def __init__(self, pool_size, ignore_border=True, stride=None, padding=(0,0), mode='max', name='', input_shape=(0,0,0,0), use_dnn=True):
+        """
+        Standard Convolutional Layer
+        """
+            
+        self.pool_size = pool_size
+        self.ignore_border = ignore_border
+        self.stride = stride
+        if self.stride is None:
+            self.stride = (1,1)
+        self.padding = padding
+        self.mode = mode
+        self.name = name
+        self.output_shape = list(input_shape)
+        self.output_shape[2] /= pool_size[0]
+        self.output_shape[3] /= pool_size[1]
+        self.use_dnn = use_dnn
+
+    def load_pretrained(self,x,i):
+        return i
+
+    def run(self, x):
+        if self.use_dnn:
+            return theano.sandbox.cuda.dnn.dnn_pool(img=x,
+                                                    ws=self.pool_size,
+                                                    stride=self.pool_size,
+                                                    mode=self.mode)
+        else:
+            return pool.pool_2d(input=x,
+                                ds=self.pool_size,
+                                st=self.stride,
+                                padding=self.padding,
+                                mode=self.mode,
+                                ignore_border=self.ignore_border)
+
+    @property
+    def params(self):
+        return []
+
+    @params.setter
+    def params(self, params):
+        pass
+
+    def print_layer(self):
+        v = '--------------------\n'
+        v += 'Pooling Layer '+self.name+'\n'
+        v += 'Pool Size: '+str(self.pool_size)+'\n'
+        v += 'Output Size: '+str(self.output_shape)+'\n'
+        return v
+        
+
+if __name__ == '__main__':
+    pl = PoolingLayer((2,2))
+    x = T.matrix()
+    out = pl.run(x)
+
+    f = theano.function([x], outputs=[out])
+    print f(np.arange(100).reshape((10,10)))

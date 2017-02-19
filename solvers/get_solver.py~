@@ -1,0 +1,11 @@
+import sgd
+import adadelta
+import adagrad
+import adam
+import momentum
+import RMSProp
+
+def get_solver(name):
+    name = name.lower()
+    if name == 'sgd':
+        return sgd.SGD

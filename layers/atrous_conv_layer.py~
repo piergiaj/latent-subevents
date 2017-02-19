@@ -1,0 +1,139 @@
+import theano
+from theano import tensor as T
+from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
+from theano.tensor.sharedvar import TensorSharedVariable
+from theano.sandbox.cuda.var import CudaNdarraySharedVariable
+from theano.tensor.nnet import conv
+from theano.sandbox.cuda import dnn
+import numpy as np
+
+from layers.pooling_layer import PoolingLayer
+
+import initialize as ini
+import activations as act
+
+srng = RandomStreams()
+np_rng = np.random.RandomState()
+
+
+class ConvLayer(object):
+
+    def __init__(self, input_shape, filter_shape, batch_size=1, name='',
+                 initializers=[ini.Uniform(0, width=0.2), ini.Constant(0.)],
+                 pad=0, use_dnn=True, device='gpu'):
+        """
+        Standard Convolutional Layer
+        """
+            
+        self.input_shape = input_shape
+        self.filter_shape = filter_shape
+        self.output_shape = list(input_shape)
+        self.output_shape[1] = self.filter_shape[0]
+        self.output_shape[2] = input_shape[2]-filter_shape[2]+1+2*pad
+        self.output_shape[3] = input_shape[3]-filter_shape[3]+1+2*pad
+        self.batch_size = batch_size
+        self.name = name
+        self.initializers = initializers
+        self.pad = pad
+        self.use_dnn = use_dnn
+        self.device = device
+
+        self.init_params()
+
+    def load_pretrained(self, vals, i):
+        self.w = theano.shared(value=vals[i], name='Conv.filters.'+self.name, borrow=True, target=self.device)
+        self.b = theano.shared(value=vals[i+1], name='Conv.b.'+self.name, borrow=True, target=self.device)
+        return i+2
+
+    def init_params(self):
+        w = self.initializers[0].init(np_rng, self.filter_shape)
+        self.w = theano.shared(value=w, name='Conv.filters.'+self.name, borrow=True, target=self.device)
+        b = self.initializers[1].init(np_rng, (self.filter_shape[0],))
+        self.b = theano.shared(value=b, name='Conv.b.'+self.name, borrow=True, target=self.device)
+
+
+    def set_batch_size(self, batch_size):
+        self.input_shape = (batch_size, self.input_shape[1], self.input_shape[2], 
+                            self.input_shape[3])
+        self.batch_size = batch_size
+        self.output_shape[0] = batch_size
+
+    def run(self, x):
+        if self.use_dnn:
+            return dnn.dnn_conv(img=x,
+                                kerns=self.w,
+                                border_mode=self.pad,
+                                conv_mode='cross') + self.b.dimshuffle('x',0,'x','x')
+        else:
+            return T.nnet.conv2d(input=x,
+                                 filters=self.w, 
+                                 filter_shape=self.filter_shape,
+                                 image_shape = self.input_shape,
+                                 border_mode=self.pad) + self.b.dimshuffle('x',0,'x','x')
+                                 
+    @property
+    def params(self):
+        if not (type(self.w) is TensorSharedVariable or type(self.w) is CudaNdarraySharedVariable):
+            self.w = theano.shared(value=self.w.astype(theano.config.floatX), name='Conv.w.'+self.name, borrow=True, target=self.device)
+            self.b = theano.shared(value=self.b.astype(theano.config.floatX), name='Conv.b.'+self.name, borrow=True, target=self.device)
+
+        return [self.w, self.b]
+
+    @params.setter
+    def params(self, params):
+        self.w.set_value(params[0])#.get_value())
+        self.b.set_value(params[1])#.get_value())
+
+    
+    def print_layer(self):
+        v = '--------------------\n'
+        v += 'Conv Layer '+self.name+'\n'
+        v += 'Input Shape: '+str(self.input_shape)+'\n'
+        return v + 'Output Shape: '+str(self.output_shape)+'\n'
+
+
+
+
+class ConvNet(object):
+    
+    def __init__(self, input_shape, num_filters, filter_sizes, pooling_sizes, batch_size, 
+                 actLayer=act.Relu, kwargs=None):
+        """
+        input_shape is (height x width) of the input size
+        num_filters is the number of filters applied at each layer
+        filter_size is (height x width) of the filters for the layer
+        """
+        self.layers = []
+        for i in range(len(num_filters)-1):
+            self.layers.append(ConvLayer(
+                (batch_size,num_filters[i],input_shape[0],input_shape[1]),
+                (num_filters[i+1], num_filters[i], filter_sizes[i], filter_sizes[i]),
+                batch_size=batch_size,
+                name='conv'+str(i), **(dict() if kwargs is None else kwargs[i])))
+            self.layers.append(PoolingLayer(pooling_sizes[i], name='pool'+str(i)))
+            input_shape[0] = (input_shape[0]-filter_sizes[i]+1)/pooling_sizes[i][0]
+            input_shape[1] = (input_shape[1]-filter_sizes[i]+1)/pooling_sizes[i][1]
+            self.layers.append(actLayer())
+        self.out_shape = [num_filters[-1]]+input_shape
+
+
+    def run(self, x):
+        output = x
+        for i in range(len(self.layers)):
+            output = self.layers[i].run(output)
+        return output
+
+    def set_batch_size(self, batch_size):
+        for layer in self.layers:
+            if hasattr(layer, 'set_batch_size'):
+                layer.set_batch_size(batch_size)
+
+    @property
+    def params(self):
+        return [param for layer in self.layers for param in layer.params]
+
+    def print_layer(self):
+        v = ''
+        for layer in self.layers:
+            v += layer.print_layer()
+        return v
