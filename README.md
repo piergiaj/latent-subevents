@@ -39,6 +39,7 @@ The somersault activity, shown here, is a more complex action where a person rot
 ![somersault](/examples/somersault.gif?raw=true "Somersault Activity")
 
 Our model learned 3 sub-events. Two focused on the intervals where the person is upside-down (frames 31 to 51 and frames 40 to 48).
+
 ![sub-event 1](/examples/subevent1.gif?raw=true "Sub-event1")
 ![sub-event 2](/examples/subevent2.gif?raw=true "Sub-event 2")
 
