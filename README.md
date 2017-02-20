@@ -22,7 +22,7 @@ The core of our approach, the temporal attention filters can be found in [tempor
 
 # Activity Classification Experiments
 This code is for the activity classification task. We are able to learn latent sub-events with only activity labels, no labels for the sub-events are given. Our model extract per-frame CNN features and learns a set of temporal attention filters on those features. Each filter corresponds to a unique sub-event and our code takes advantage of these sub-events for improved performance on the recognition of activities.
-~[model](/examples/model.png =300x)
+![model](/examples/model.png =300x)
 
 We tested our models on both the [DogCentric](http://robotics.ait.kyushu-u.ac.jp/~yumi/db/first_dog.html) dataset as well as the [HMDB](http://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/) dataset.
 
@@ -30,25 +30,22 @@ We tested our models on both the [DogCentric](http://robotics.ait.kyushu-u.ac.jp
 # Example Learned Sub-events
 We trained our model on the [HMDB](http://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/) dataset which contains ~7000 videos of 51 different human activities. Our model learned 3 sub-events for each activity. Here are some of the sub-events our model learned.
 
-For the pushup activity, our model learned two key sub-events: the "moving down" sub-event and the "pushing up" sub-event.
+For the pushup activity, our model learned two key sub-events: the "moving down" sub-event (frames 18 to 26) and the "pushing up" sub-event (frames 48 to 55).
 
 ![going down](/examples/down.gif?raw=true "Going down Sub-event")
-*frames 18 to 26*
 ![pushing up](/examples/up.gif?raw=true "Pushing up Sub-event")
-*frames 48 to 55*
 
 The somersault activity, shown here, is a more complex action where a person rotates over their feet:
 ![somersault](/examples/somersault.gif?raw=true "Somersault Activity")
 
-Our model learned 3 sub-events. Two focused on the intervals where the person is upside-down.
+Our model learned 3 sub-events. Two focused on the intervals where the person is upside-down (frames 31 to 51 and frames 40 to 48).
 ![sub-event 1](/examples/subevent1.gif?raw=true "Sub-event1")
 *frames 31 to 51*
 ![sub-event 2](/examples/subevent2.gif?raw=true "Sub-event 2")
 *frames 40 to 48*
 
-The third sub-event focuses on the person standing up after completing the flip.
+The third sub-event focuses on the person standing up after completing the flip (frames 54 to 60).
 ![sub-event 3](/examples/subevent3.gif?raw=true "Sub-event 3")
-*frames 54 to 60*
 
 
 ================================================================================
