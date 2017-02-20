@@ -54,7 +54,7 @@ Our code has been tested on Ubuntu 14.04 and 16.04 using the [Theano](https://gi
 
 # Setup
 
-1. Download the code ```git clone ```
+1. Download the code ```git clone https://github.com/piergiaj/latent-subevents.git```
 
 2. Extract features from your dataset. These can be any per-frame feature, such as [VGG](https://gist.github.com/baraldilorenzo/07d7802847aaad0a35d3), or per-segment features, such as [C3D](https://gist.github.com/albertomontesg/d8b21a179c1e6cca0480ebdf292c34d2) applied over many segments, or [ITF](https://lear.inrialpes.fr/people/wang/improved_trajectories) features. We replied on pretrained models for this step. 
 
