@@ -22,7 +22,7 @@ The core of our approach, the temporal attention filters can be found in [tempor
 
 # Activity Classification Experiments
 This code is for the activity classification task. We are able to learn latent sub-events with only activity labels, no labels for the sub-events are given. Our model extract per-frame CNN features and learns a set of temporal attention filters on those features. Each filter corresponds to a unique sub-event and our code takes advantage of these sub-events for improved performance on the recognition of activities.
-![model](/examples/model.png | width=300)
+![model](/examples/model.png)
 
 We tested our models on both the [DogCentric](http://robotics.ait.kyushu-u.ac.jp/~yumi/db/first_dog.html) dataset as well as the [HMDB](http://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/) dataset.
 
