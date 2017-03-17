@@ -9,11 +9,11 @@ This repository contains the code for our [AAAI 2017 paper](https://arxiv.org/ab
 
 If you find the code useful for your research, please cite our paper:
 
-        @inproceedings{piergiovanni2016learning,
+        @inproceedings{piergiovanni2017learning,
             title={Learning Latent Sub-events in Activity Videos Using Temporal Attention Filters},
             author={Piergiovanni, AJ and Fan, Chenyou and Ryoo, Michael S},
             booktitle={Proceedings of the Thirty-First {AAAI} Conference on Artificial Intelligence},
-            year={2016}
+            year={2017}
         }
 
 
